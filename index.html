@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kafka Web Producer</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2rem; background: #f4f6f8; }
+    button { padding: 0.8rem 1.4rem; font-size: 1.1rem; cursor: pointer; }
+    #status { margin-top: 1rem; font-family: monospace; }
+  </style>
+</head>
+<body>
+  <h1>Enviar a Kafka (topic: test)</h1>
+  <p>Cada clic envía un mensaje simple incrementando: click-1, click-2, ...</p>
+  <button id="send">Enviar</button>
+  <div id="status">Listo</div>
+
+  <script>
+    const btn = document.getElementById('send');
+    const status = document.getElementById('status');
+
+    btn.addEventListener('click', async () => {
+      status.textContent = 'Enviando...';
+      try {
+        const res = await fetch('/send', { method: 'POST' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        status.textContent = 'Enviado: ' + data.sent;
+      } catch (err) {
+        status.textContent = 'Error: ' + err;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kafka Web Producer (Remote)</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2rem; background: #f4f6f8; }
+    button { padding: 0.8rem 1.4rem; font-size: 1.1rem; cursor: pointer; }
+    #status { margin-top: 1rem; font-family: monospace; }
+    input { padding: 0.5rem; width: 100%; margin: 0.5rem 0; }
+    .card { background: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Enviar a Kafka (topic: test)</h1>
+    <p>Cada clic envía un mensaje incrementando: click-1, click-2, ...</p>
+    <label for="endpoint">Endpoint público (ngrok/tu API):</label>
+    <input id="endpoint" type="text" value="https://81eb208910f7.ngrok-free.app/send" />
+    <button id="send">Enviar</button>
+    <div id="status">Listo</div>
+  </div>
+
+  <script>
+    const btn = document.getElementById('send');
+    const status = document.getElementById('status');
+    const endpointInput = document.getElementById('endpoint');
+
+    btn.addEventListener('click', async () => {
+      status.textContent = 'Enviando...';
+      const url = endpointInput.value.trim();
+      if (!url) { status.textContent = 'Error: endpoint vacío'; return; }
+      try {
+        const res = await fetch(url, { method: 'POST' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        status.textContent = 'Enviado: ' + (data.sent || JSON.stringify(data));
+      } catch (err) {
+        status.textContent = 'Error: ' + err;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -16,6 +16,8 @@
   <div class="card">
     <h1>Enviar a Kafka (topic: test)</h1>
     <p>Cada clic envía un mensaje incrementando: click-1, click-2, ...</p>
+    <label for="username">Tu nombre:</label>
+    <input id="username" type="text" placeholder="Escribe tu nombre" />
     <label for="endpoint">Endpoint público (ngrok/tu API):</label>
     <input id="endpoint" type="text" value="https://81eb208910f7.ngrok-free.app/send" />
     <button id="send">Enviar</button>
@@ -26,16 +28,23 @@
     const btn = document.getElementById('send');
     const status = document.getElementById('status');
     const endpointInput = document.getElementById('endpoint');
+    const usernameInput = document.getElementById('username');
 
     btn.addEventListener('click', async () => {
       status.textContent = 'Enviando...';
       const url = endpointInput.value.trim();
+      const name = usernameInput.value.trim();
       if (!url) { status.textContent = 'Error: endpoint vacío'; return; }
+      if (!name) { status.textContent = 'Error: introduce tu nombre'; return; }
       try {
-        const res = await fetch(url, { method: 'POST' });
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
-        status.textContent = 'Enviado: ' + (data.sent || JSON.stringify(data));
+        status.textContent = 'Enviado: ' + (data.sent || JSON.stringify(data)) + ' (usuario: ' + name + ')';
       } catch (err) {
         status.textContent = 'Error: ' + err;
       }

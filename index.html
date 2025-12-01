@@ -54,6 +54,7 @@
     const stepAction = document.getElementById('step-action');
     let user = { name: "", team: "" };
     let pollInterval = null;
+    let allowInterval = null;
 
     const teams = [
       { name: "azul", color: "#0d47a1" },
@@ -72,35 +73,41 @@
       if (!name) { status.textContent = 'Error: introduce tu nombre'; return; }
       user.name = name;
       pickTeam();
-      sendNameTeam();
+      sendRegister();
       stepName.classList.add('hidden');
       stepWait.classList.remove('hidden');
       status.textContent = 'Esperando...';
-      startPollingTeams();
+      startPollingAllow();
     });
 
-    function startPollingTeams() {
-      async function fetchTeams() {
+    function startPollingAllow() {
+      async function checkAllow() {
         try {
-          const res = await fetch("/teams");
+          const res = await fetch("/allow_action");
           if (!res.ok) return;
-          await res.json();
+          const data = await res.json();
+          if (data.allow) {
+            stopPollingAllow();
+            stepWait.classList.add('hidden');
+            stepAction.classList.remove('hidden');
+            status.textContent = 'Listo';
+          }
         } catch (e) {}
       }
-      fetchTeams();
-      pollInterval = setInterval(fetchTeams, 5000);
+      checkAllow();
+      allowInterval = setInterval(checkAllow, 3000);
     }
 
-    function stopPolling() {
-      if (pollInterval) clearInterval(pollInterval);
-      pollInterval = null;
+    function stopPollingAllow() {
+      if (allowInterval) clearInterval(allowInterval);
+      allowInterval = null;
     }
 
-    async function sendNameTeam() {
+    async function sendRegister() {
       const url = endpointInput.value.trim();
       if (!url || !user.name) return;
       try {
-        await fetch(url, {
+        await fetch("/register", {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: user.name, team: user.team })
@@ -109,10 +116,8 @@
     }
 
     document.getElementById('continue-btn').addEventListener('click', () => {
-      stopPolling();
-      stepWait.classList.add('hidden');
-      stepAction.classList.remove('hidden');
-      status.textContent = 'Listo';
+      // ya no hace nada aquí; la app controla allow_action
+      status.textContent = 'Esperando confirmación...';
     });
 
     btn.addEventListener('click', async () => {

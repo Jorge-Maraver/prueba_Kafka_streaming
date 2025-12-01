@@ -1,56 +1,62 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kafka Web Producer</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kafka Sender</title>
   <style>
-    body { font-family: Arial, sans-serif; margin:0; padding:2rem; background:#f4f6f8; }
-    .card { max-width:420px; margin:2rem auto; background:#fff; padding:1.5rem; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
-    label { font-weight:bold; }
-    input, button { width:100%; padding:0.8rem; margin:0.5rem 0; font-size:1rem; }
-    button { cursor:pointer; border:none; border-radius:10px; background:#0d47a1; color:#fff; }
-    #status { margin-top:0.5rem; font-family:monospace; text-align:center; }
+    body { font-family: Arial, sans-serif; max-width: 520px; margin: 40px auto; padding: 0 18px; line-height: 1.5; }
+    h1 { font-size: 24px; margin-bottom: 12px; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 18px 16px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+    label { display: block; margin-bottom: 8px; font-weight: 600; }
+    input { width: 100%; padding: 10px 12px; font-size: 15px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+    button { margin-top: 12px; padding: 10px 14px; font-size: 15px; border: none; border-radius: 8px; background: #0f7bff; color: #fff; cursor: pointer; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    #status { margin-top: 12px; font-family: monospace; white-space: pre-wrap; }
   </style>
 </head>
 <body>
+  <h1>Enviar a Kafka</h1>
   <div class="card">
-    <h2>Enviar a Kafka</h2>
-    <label for="username">Tu nombre:</label>
-    <input id="username" type="text" placeholder="Escribe tu nombre" />
-
-    <label for="endpoint">Endpoint (URL /send):</label>
-    <input id="endpoint" type="text" value="https://15c51059dfc4.ngrok-free.app/send" />
-
-    <button id="send">Enviar</button>
-    <div id="status">Listo</div>
+    <label for="name">Nombre (opcional)</label>
+    <input id="name" placeholder="Tu nombre" />
+    <button id="sendBtn">Enviar JSON</button>
+    <div id="status"></div>
   </div>
 
   <script>
-    const btn = document.getElementById('send');
-    const status = document.getElementById('status');
-    const endpointInput = document.getElementById('endpoint');
-    const usernameInput = document.getElementById('username');
+    const ENDPOINT = "https://c1b5d60e4ae0.ngrok-free.app/send";
+    const btn = document.getElementById("sendBtn");
+    const statusEl = document.getElementById("status");
+    const nameInput = document.getElementById("name");
 
-    btn.addEventListener('click', async () => {
-      status.textContent = 'Enviando...';
-      const url = endpointInput.value.trim();
-      const name = usernameInput.value.trim();
-      if (!url) { status.textContent = 'Error: endpoint vacío'; return; }
-      if (!name) { status.textContent = 'Error: introduce tu nombre'; return; }
+    function setStatus(text, isError = false) {
+      statusEl.textContent = text;
+      statusEl.style.color = isError ? "#b00020" : "#1a1a1a";
+    }
+
+    async function sendJson() {
+      const name = (nameInput.value || "").trim();
+      const payload = { name };
+      btn.disabled = true;
+      setStatus("Enviando...");
       try {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name })
+        const res = await fetch(ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
+        if (!res.ok) throw new Error(HTTP );
         const data = await res.json();
-        status.textContent = 'Enviado: ' + (data.sent || JSON.stringify(data));
+        setStatus(OK\n);
       } catch (err) {
-        status.textContent = 'Error: ' + err;
+        setStatus(Error: , true);
+      } finally {
+        btn.disabled = false;
       }
-    });
+    }
+
+    btn.addEventListener("click", sendJson);
   </script>
 </body>
 </html>

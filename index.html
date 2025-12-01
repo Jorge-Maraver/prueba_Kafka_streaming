@@ -1,65 +1,54 @@
-<!DOCTYPE html>
-<html lang="es">
+<!doctype html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kafka Sender</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kafka Web Producer (Remote)</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 520px; margin: 40px auto; padding: 0 18px; line-height: 1.5; }
-    h1 { font-size: 24px; margin-bottom: 12px; }
-    .card { border: 1px solid #ddd; border-radius: 10px; padding: 18px 16px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
-    label { display: block; margin-bottom: 8px; font-weight: 600; }
-    input { width: 100%; padding: 10px 12px; font-size: 15px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
-    button { margin-top: 12px; padding: 10px 14px; font-size: 15px; border: none; border-radius: 8px; background: #0f7bff; color: #fff; cursor: pointer; }
-    button:disabled { opacity: 0.6; cursor: not-allowed; }
-    #status { margin-top: 12px; font-family: monospace; white-space: pre-wrap; }
+    body { font-family: Arial, sans-serif; padding: 2rem; background: #f4f6f8; }
+    button { padding: 0.8rem 1.4rem; font-size: 1.1rem; cursor: pointer; }
+    #status { margin-top: 1rem; font-family: monospace; }
+    input { padding: 0.5rem; width: 100%; margin: 0.5rem 0; }
+    .card { background: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body>
-  <h1>Enviar a Kafka</h1>
   <div class="card">
-    <label for="name">Nombre (opcional)</label>
-    <input id="name" placeholder="Tu nombre" />
-    <button id="sendBtn">Enviar JSON</button>
-    <div id="status"></div>
+    <h1>Enviar a Kafka (topic: test)</h1>
+    <p>Cada clic envía un mensaje incrementando: click-1, click-2, ...</p>
+    <label for="username">Tu nombre:</label>
+    <input id="username" type="text" placeholder="Escribe tu nombre" />
+    <label for="endpoint">Endpoint público (ngrok/tu API):</label>
+    <input id="endpoint" type="text" value="https://e380df7f21ce.ngrok-free.app/send" />
+    <button id="send">Enviar</button>
+    <div id="status">Listo</div>
   </div>
 
   <script>
-    const ENDPOINT = "https://c1b5d60e4ae0.ngrok-free.app/send";
-    const btn = document.getElementById("sendBtn");
-    const statusEl = document.getElementById("status");
-    const nameInput = document.getElementById("name");
+    const btn = document.getElementById('send');
+    const status = document.getElementById('status');
+    const endpointInput = document.getElementById('endpoint');
+    const usernameInput = document.getElementById('username');
 
-    function setStatus(text, isError = false) {
-      statusEl.textContent = text;
-      statusEl.style.color = isError ? "#b00020" : "#1a1a1a";
-    }
-
-    async function sendJson() {
-      const name = (nameInput.value || "").trim();
-      const payload = { name };
-      btn.disabled = true;
-      setStatus("Enviando...");
+    btn.addEventListener('click', async () => {
+      status.textContent = 'Enviando...';
+      const url = endpointInput.value.trim();
+      const name = usernameInput.value.trim();
+      if (!url) { status.textContent = 'Error: endpoint vacío'; return; }
+      if (!name) { status.textContent = 'Error: introduce tu nombre'; return; }
       try {
-        const res = await fetch(ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
         });
-        if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          throw new Error(HTTP  .trim());
-        }
+        if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
-        setStatus(OK\n);
+        status.textContent = 'Enviado: ' + (data.sent || JSON.stringify(data)) + ' (usuario: ' + name + ')';
       } catch (err) {
-        setStatus(Error: , true);
-      } finally {
-        btn.disabled = false;
+        status.textContent = 'Error: ' + err;
       }
-    }
-
-    btn.addEventListener("click", sendJson);
+    });
   </script>
 </body>
 </html>

@@ -33,7 +33,21 @@
     <div id="wait-card">
       <h2 id="wait-text">Esperando...</h2>
       <img id="team-image" src="https://www.meme-arsenal.com/memes/c5a30d2e30e5a0249eeead3bee852b77.jpg" alt="waiting" />
-      <div style="margin-top:1rem;"><button id="continue-btn">Continuar</button></div>
+      <div id="status-wait" style="margin-top:0.5rem;">Tu equipo está asignado. Espera a que la app confirme.</div>
+    </div>
+    <div class="columns">
+      <div class="col" id="col-rojo" style="background:#b71c1c;">
+        <h3>Rojo</h3>
+        <div id="list-rojo"></div>
+      </div>
+      <div class="col" id="col-verde" style="background:#1b5e20;">
+        <h3>Verde</h3>
+        <div id="list-verde"></div>
+      </div>
+      <div class="col" id="col-azul" style="background:#0d47a1;">
+        <h3>Azul</h3>
+        <div id="list-azul"></div>
+      </div>
     </div>
   </div>
 
@@ -83,7 +97,7 @@
     function startPollingAllow() {
       async function checkAllow() {
         try {
-          const res = await fetch("/allow_action");
+          const res = await fetch(`${API_BASE}/allow_action`);
           if (!res.ok) return;
           const data = await res.json();
           if (data.allow) {
@@ -94,8 +108,20 @@
           }
         } catch (e) {}
       }
+      async function fetchTeams() {
+        try {
+          const res = await fetch(`${API_BASE}/teams`);
+          if (!res.ok) return;
+          const data = await res.json();
+          ["rojo","verde","azul"].forEach(team => {
+            const listEl = document.getElementById(`list-${team}`);
+            listEl.innerHTML = (data[team] || []).map(n => `<div>${n}</div>`).join("");
+          });
+        } catch (e) {}
+      }
       checkAllow();
-      allowInterval = setInterval(checkAllow, 3000);
+      fetchTeams();
+      allowInterval = setInterval(() => { checkAllow(); fetchTeams(); }, 3000);
     }
 
     function stopPollingAllow() {
@@ -104,21 +130,15 @@
     }
 
     async function sendRegister() {
-      const url = endpointInput.value.trim();
-      if (!url || !user.name) return;
+      if (!API_BASE || !user.name) return;
       try {
-        await fetch("/register", {
+        await fetch(`${API_BASE}/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: user.name, team: user.team })
         });
       } catch (e) {}
     }
-
-    document.getElementById('continue-btn').addEventListener('click', () => {
-      // ya no hace nada aquí; la app controla allow_action
-      status.textContent = 'Esperando confirmación...';
-    });
 
     btn.addEventListener('click', async () => {
       status.textContent = 'Enviando...';
@@ -138,6 +158,14 @@
         status.textContent = 'Error: ' + err;
       }
     });
+
+    // Ajusta la base de API al dominio del endpoint (ngrok)
+    let API_BASE = "";
+    function setApiBase() {
+      const full = endpointInput.value.trim();
+      API_BASE = full.replace(/\/send$/, "");
+    }
+    setApiBase();
   </script>
 </body>
 </html>

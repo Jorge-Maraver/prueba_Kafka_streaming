@@ -11,13 +11,7 @@
     input { padding: 0.5rem; width: 100%; margin: 0.5rem 0; }
     .card { background: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); max-width: 420px; margin: 2rem auto; }
     .hidden { display: none; }
-    #step-wait { display: none; padding: 1rem; }
-    .columns { display: flex; gap: 1rem; margin-top: 1rem; }
-    .col { flex: 1; color: #fff; padding: 0.5rem; border-radius: 8px; min-height: 120px; }
-    .col h3 { margin: 0 0 0.5rem 0; text-align: center; }
     #step-action { background: transparent; box-shadow: none; padding: 0; max-width: none; margin: 0; display: flex; justify-content: center; align-items: center; height: calc(100vh); flex-direction: column; }
-    #wait-card { background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 12px; color: #fff; text-align: center; }
-    #team-image { max-width: 240px; border-radius: 12px; margin-top: 1rem; }
   </style>
 </head>
 <body>
@@ -27,28 +21,6 @@
     <label for="username">Tu nombre:</label>
     <input id="username" type="text" placeholder="Escribe tu nombre" />
     <button id="join">Unirme</button>
-  </div>
-
-  <div id="step-wait" class="hidden">
-    <div id="wait-card">
-      <h2 id="wait-text">Esperando...</h2>
-      <img id="team-image" src="https://www.meme-arsenal.com/memes/c5a30d2e30e5a0249eeead3bee852b77.jpg" alt="waiting" />
-      <div id="status-wait" style="margin-top:0.5rem;">Tu equipo está asignado. Espera a que la app confirme.</div>
-    </div>
-    <div class="columns">
-      <div class="col" id="col-rojo" style="background:#b71c1c;">
-        <h3>Rojo</h3>
-        <div id="list-rojo"></div>
-      </div>
-      <div class="col" id="col-verde" style="background:#1b5e20;">
-        <h3>Verde</h3>
-        <div id="list-verde"></div>
-      </div>
-      <div class="col" id="col-azul" style="background:#0d47a1;">
-        <h3>Azul</h3>
-        <div id="list-azul"></div>
-      </div>
-    </div>
   </div>
 
   <div class="card hidden" id="step-action">
@@ -66,9 +38,6 @@
     const stepName = document.getElementById('step-name');
     const stepWait = document.getElementById('step-wait');
     const stepAction = document.getElementById('step-action');
-    const listRojo = document.getElementById('list-rojo');
-    const listVerde = document.getElementById('list-verde');
-    const listAzul = document.getElementById('list-azul');
     let user = { name: "", team: "" };
     let allowInterval = null;
 
@@ -97,57 +66,10 @@
       if (!name) { status.textContent = 'Error: introduce tu nombre'; return; }
       user.name = name;
       pickTeam();
-      sendRegister();
       stepName.classList.add('hidden');
-      stepWait.classList.remove('hidden');
-      status.textContent = 'Esperando...';
-      startPollingAllow();
+      stepAction.classList.remove('hidden');
+      status.textContent = 'Listo';
     });
-
-    function startPollingAllow() {
-      async function checkAllow() {
-        try {
-          const res = await fetch(`${API_BASE}/allow_action`);
-          if (!res.ok) return;
-          const data = await res.json();
-          if (data.allow) {
-            stopPollingAllow();
-            stepWait.classList.add('hidden');
-            stepAction.classList.remove('hidden');
-            status.textContent = 'Listo';
-          }
-        } catch (e) {}
-      }
-      async function fetchTeams() {
-        try {
-          const res = await fetch(`${API_BASE}/teams`);
-          if (!res.ok) return;
-          const data = await res.json();
-          listRojo.innerHTML = (data.rojo || []).map(n => `<div>${n}</div>`).join("");
-          listVerde.innerHTML = (data.verde || []).map(n => `<div>${n}</div>`).join("");
-          listAzul.innerHTML = (data.azul || []).map(n => `<div>${n}</div>`).join("");
-        } catch (e) {}
-      }
-      checkAllow();
-      fetchTeams();
-      allowInterval = setInterval(() => { checkAllow(); fetchTeams(); }, 3000);
-    }
-
-    function stopPollingAllow() {
-      if (allowInterval) clearInterval(allowInterval);
-      allowInterval = null;
-    }
-
-    async function sendRegister() {
-      if (!API_BASE || !user.name) return;
-      try {
-        await fetch(`${API_BASE}/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: user.name, team: user.team })
-        });
-      } catch (e) {}
-    }
 
     btn.addEventListener('click', async () => {
       status.textContent = 'Enviando...';

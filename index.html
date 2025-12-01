@@ -35,20 +35,6 @@
       <img id="team-image" src="https://www.meme-arsenal.com/memes/c5a30d2e30e5a0249eeead3bee852b77.jpg" alt="waiting" />
       <div style="margin-top:1rem;"><button id="continue-btn">Continuar</button></div>
     </div>
-    <div class="columns">
-      <div class="col" id="col-rojo" style="background:#b71c1c;">
-        <h3>Rojo</h3>
-        <div id="list-rojo"></div>
-      </div>
-      <div class="col" id="col-verde" style="background:#1b5e20;">
-        <h3>Verde</h3>
-        <div id="list-verde"></div>
-      </div>
-      <div class="col" id="col-azul" style="background:#0d47a1;">
-        <h3>Azul</h3>
-        <div id="list-azul"></div>
-      </div>
-    </div>
   </div>
 
   <div class="card hidden" id="step-action">
@@ -94,19 +80,11 @@
     });
 
     function startPollingTeams() {
-      const lists = {
-        rojo: document.getElementById('list-rojo'),
-        verde: document.getElementById('list-verde'),
-        azul: document.getElementById('list-azul')
-      };
       async function fetchTeams() {
         try {
           const res = await fetch("/teams");
           if (!res.ok) return;
-          const data = await res.json();
-          ["rojo","verde","azul"].forEach(team => {
-            lists[team].innerHTML = (data[team] || []).map(n => `<div>${n}</div>`).join("");
-          });
+          await res.json();
         } catch (e) {}
       }
       fetchTeams();

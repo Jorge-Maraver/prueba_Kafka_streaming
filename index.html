@@ -5,148 +5,46 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kafka Web Producer</title>
   <style>
-    body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f6f8; }
+    body { font-family: Arial, sans-serif; margin:0; padding:2rem; background:#f4f6f8; }
     .card { max-width:420px; margin:2rem auto; background:#fff; padding:1.5rem; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
     input, button { width:100%; padding:0.8rem; margin:0.5rem 0; font-size:1rem; }
     button { cursor:pointer; border:none; border-radius:10px; background:#0d47a1; color:#fff; }
     #status { margin-top:0.5rem; font-family:monospace; text-align:center; }
-    .hidden { display:none; }
-    #wait-view { padding:1.5rem; color:#fff; text-align:center; }
-    .columns { display:flex; gap:1rem; margin-top:1rem; }
-    .col { flex:1; color:#fff; padding:0.5rem; border-radius:8px; min-height:120px; }
-    .col h3 { margin:0 0 0.5rem 0; text-align:center; }
   </style>
 </head>
 <body>
-  <div class="card" id="step-name">
+  <div class="card">
     <h2>Enviar a Kafka</h2>
     <label for="username">Tu nombre:</label>
     <input id="username" type="text" placeholder="Escribe tu nombre" />
-    <input id="endpoint" type="hidden" value="https://a03651b9babe.ngrok-free.app/send" />
-    <button id="join">Continuar</button>
+    <input id="endpoint" type="hidden" value="https://15c51059dfc4.ngrok-free.app/send" />
+    <button id="send">Enviar</button>
     <div id="status">Listo</div>
   </div>
 
-  <div id="wait-view" class="hidden">
-    <h2>Esperando...</h2>
-    <img src="https://www.meme-arsenal.com/memes/c5a30d2e30e5a0249eeead3bee852b77.jpg" alt="waiting" style="max-width:240px;border-radius:12px;">
-    <p>Tu equipo está asignado. Espera a que la app confirme.</p>
-    <div class="columns">
-      <div class="col" id="col-rojo" style="background:#b71c1c;">
-        <h3>Rojo</h3><div id="list-rojo"></div>
-      </div>
-      <div class="col" id="col-verde" style="background:#1b5e20;">
-        <h3>Verde</h3><div id="list-verde"></div>
-      </div>
-      <div class="col" id="col-azul" style="background:#0d47a1;">
-        <h3>Azul</h3><div id="list-azul"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="card hidden" id="step-button">
-    <button id="send">Enviar</button>
-    <div id="status-send">Listo</div>
-  </div>
-
   <script>
-    const joinBtn = document.getElementById('join');
-    const sendBtn = document.getElementById('send');
-    const usernameInput = document.getElementById('username');
-    const endpointInput = document.getElementById('endpoint');
-    const stepName = document.getElementById('step-name');
-    const waitView = document.getElementById('wait-view');
-    const stepButton = document.getElementById('step-button');
+    const btn = document.getElementById('send');
     const status = document.getElementById('status');
-    const statusSend = document.getElementById('status-send');
-    const listRojo = document.getElementById('list-rojo');
-    const listVerde = document.getElementById('list-verde');
-    const listAzul = document.getElementById('list-azul');
+    const endpointInput = document.getElementById('endpoint');
+    const usernameInput = document.getElementById('username');
 
-    const teams = [
-      { name: "azul", color: "#0d47a1" },
-      { name: "verde", color: "#1b5e20" },
-      { name: "rojo", color: "#b71c1c" },
-    ];
-    let user = { name: "", team: "" };
-    let allowInterval = null;
-
-    // Base del API derivada del endpoint /send
-    let API_BASE = "";
-    function setApiBase() {
-      const full = endpointInput.value.trim();
-      API_BASE = full.replace(/\/send$/, "");
-    }
-    setApiBase();
-
-    function pickTeam() {
-      const t = teams[Math.floor(Math.random() * teams.length)];
-      user.team = t.name;
-      document.body.style.background = t.color;
-    }
-
-    joinBtn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
+      status.textContent = 'Enviando...';
+      const url = endpointInput.value.trim();
       const name = usernameInput.value.trim();
+      if (!url) { status.textContent = 'Error: endpoint vacío'; return; }
       if (!name) { status.textContent = 'Error: introduce tu nombre'; return; }
-      user.name = name;
-      pickTeam();
-      registerUser();
-      stepName.classList.add('hidden');
-      waitView.classList.remove('hidden');
-      pollAllow();
-    });
-
-    async function registerUser() {
-      if (!API_BASE || !user.name) return;
-      try {
-        await fetch(`${API_BASE}/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: user.name, team: user.team })
-        });
-      } catch (e) {}
-    }
-
-    function pollAllow() {
-      const interval = setInterval(async () => {
-        try {
-          const res = await fetch(`${API_BASE}/allow_action`);
-          if (!res.ok) return;
-          const data = await res.json();
-          if (data.allow) {
-            clearInterval(interval);
-            waitView.classList.add('hidden');
-            stepButton.classList.remove('hidden');
-            statusSend.textContent = 'Listo';
-          }
-        } catch (e) {}
-        // Actualiza listas de equipos
-        try {
-          const resT = await fetch(`${API_BASE}/teams`);
-          if (!resT.ok) return;
-          const dataT = await resT.json();
-          listRojo.innerHTML = (dataT.rojo || []).map(n => `<div>${n}</div>`).join("");
-          listVerde.innerHTML = (dataT.verde || []).map(n => `<div>${n}</div>`).join("");
-          listAzul.innerHTML = (dataT.azul || []).map(n => `<div>${n}</div>`).join("");
-        } catch (e) {}
-      }, 3000);
-    }
-
-    sendBtn.addEventListener('click', async () => {
-      const url = API_BASE + '/send';
-      if (!user.name) { statusSend.textContent = 'Error: introduce tu nombre'; return; }
-      statusSend.textContent = 'Enviando...';
       try {
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: user.name, team: user.team })
+          body: JSON.stringify({ name })
         });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
-        statusSend.textContent = 'Enviado: ' + (data.sent || JSON.stringify(data));
+        status.textContent = 'Enviado: ' + (data.sent || JSON.stringify(data));
       } catch (err) {
-        statusSend.textContent = 'Error: ' + err;
+        status.textContent = 'Error: ' + err;
       }
     });
   </script>

@@ -66,9 +66,19 @@
     const stepName = document.getElementById('step-name');
     const stepWait = document.getElementById('step-wait');
     const stepAction = document.getElementById('step-action');
+    const listRojo = document.getElementById('list-rojo');
+    const listVerde = document.getElementById('list-verde');
+    const listAzul = document.getElementById('list-azul');
     let user = { name: "", team: "" };
-    let pollInterval = null;
     let allowInterval = null;
+
+    // Ajusta la base de API al dominio del endpoint (ngrok)
+    let API_BASE = "";
+    function setApiBase() {
+      const full = endpointInput.value.trim();
+      API_BASE = full.replace(/\/send$/, "");
+    }
+    setApiBase();
 
     const teams = [
       { name: "azul", color: "#0d47a1" },
@@ -113,10 +123,9 @@
           const res = await fetch(`${API_BASE}/teams`);
           if (!res.ok) return;
           const data = await res.json();
-          ["rojo","verde","azul"].forEach(team => {
-            const listEl = document.getElementById(`list-${team}`);
-            listEl.innerHTML = (data[team] || []).map(n => `<div>${n}</div>`).join("");
-          });
+          listRojo.innerHTML = (data.rojo || []).map(n => `<div>${n}</div>`).join("");
+          listVerde.innerHTML = (data.verde || []).map(n => `<div>${n}</div>`).join("");
+          listAzul.innerHTML = (data.azul || []).map(n => `<div>${n}</div>`).join("");
         } catch (e) {}
       }
       checkAllow();
@@ -158,14 +167,6 @@
         status.textContent = 'Error: ' + err;
       }
     });
-
-    // Ajusta la base de API al dominio del endpoint (ngrok)
-    let API_BASE = "";
-    function setApiBase() {
-      const full = endpointInput.value.trim();
-      API_BASE = full.replace(/\/send$/, "");
-    }
-    setApiBase();
   </script>
 </body>
 </html>

@@ -5,13 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kafka Web Producer (Remote)</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 2rem; background: #f4f6f8; margin:0; }
+    body { font-family: Arial, sans-serif; padding: 0; background: #f4f6f8; margin:0; }
     button { padding: 1rem 2rem; font-size: 1.2rem; cursor: pointer; border: none; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
-    #status { margin-top: 1rem; font-family: monospace; text-align:center; color:#333; }
+    #status { margin-top: 1rem; font-family: monospace; text-align:center; color:#fff; }
     input { padding: 0.5rem; width: 100%; margin: 0.5rem 0; }
     .card { background: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); max-width: 420px; margin: 2rem auto; }
     .hidden { display: none; }
-    #step-action { background: transparent; box-shadow: none; padding: 0; max-width: none; margin: 0; display: flex; justify-content: center; align-items: center; height: calc(100vh - 40px); flex-direction: column; }
+    #step-wait { display: none; padding: 1rem; }
+    .columns { display: flex; gap: 1rem; margin-top: 1rem; }
+    .col { flex: 1; color: #fff; padding: 0.5rem; border-radius: 8px; min-height: 120px; }
+    .col h3 { margin: 0 0 0.5rem 0; text-align: center; }
+    #step-action { background: transparent; box-shadow: none; padding: 0; max-width: none; margin: 0; display: flex; justify-content: center; align-items: center; height: calc(100vh); flex-direction: column; }
+    #wait-card { background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 12px; color: #fff; text-align: center; }
+    #team-image { max-width: 240px; border-radius: 12px; margin-top: 1rem; }
   </style>
 </head>
 <body>
@@ -21,6 +27,28 @@
     <label for="username">Tu nombre:</label>
     <input id="username" type="text" placeholder="Escribe tu nombre" />
     <button id="join">Unirme</button>
+  </div>
+
+  <div id="step-wait" class="hidden">
+    <div id="wait-card">
+      <h2 id="wait-text">Esperando...</h2>
+      <img id="team-image" src="https://www.meme-arsenal.com/memes/c5a30d2e30e5a0249eeead3bee852b77.jpg" alt="waiting" />
+      <div style="margin-top:1rem;"><button id="continue-btn">Continuar</button></div>
+    </div>
+    <div class="columns">
+      <div class="col" id="col-rojo" style="background:#b71c1c;">
+        <h3>Rojo</h3>
+        <div id="list-rojo"></div>
+      </div>
+      <div class="col" id="col-verde" style="background:#1b5e20;">
+        <h3>Verde</h3>
+        <div id="list-verde"></div>
+      </div>
+      <div class="col" id="col-azul" style="background:#0d47a1;">
+        <h3>Azul</h3>
+        <div id="list-azul"></div>
+      </div>
+    </div>
   </div>
 
   <div class="card hidden" id="step-action">
@@ -36,8 +64,10 @@
     const usernameInput = document.getElementById('username');
     const joinBtn = document.getElementById('join');
     const stepName = document.getElementById('step-name');
+    const stepWait = document.getElementById('step-wait');
     const stepAction = document.getElementById('step-action');
     let user = { name: "", team: "" };
+    let pollInterval = null;
 
     const teams = [
       { name: "azul", color: "#0d47a1" },
@@ -56,7 +86,53 @@
       if (!name) { status.textContent = 'Error: introduce tu nombre'; return; }
       user.name = name;
       pickTeam();
+      sendNameTeam();
       stepName.classList.add('hidden');
+      stepWait.classList.remove('hidden');
+      status.textContent = 'Esperando...';
+      startPollingTeams();
+    });
+
+    function startPollingTeams() {
+      const lists = {
+        rojo: document.getElementById('list-rojo'),
+        verde: document.getElementById('list-verde'),
+        azul: document.getElementById('list-azul')
+      };
+      async function fetchTeams() {
+        try {
+          const res = await fetch("/teams");
+          if (!res.ok) return;
+          const data = await res.json();
+          ["rojo","verde","azul"].forEach(team => {
+            lists[team].innerHTML = (data[team] || []).map(n => `<div>${n}</div>`).join("");
+          });
+        } catch (e) {}
+      }
+      fetchTeams();
+      pollInterval = setInterval(fetchTeams, 5000);
+    }
+
+    function stopPolling() {
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = null;
+    }
+
+    async function sendNameTeam() {
+      const url = endpointInput.value.trim();
+      if (!url || !user.name) return;
+      try {
+        await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: user.name, team: user.team })
+        });
+      } catch (e) {}
+    }
+
+    document.getElementById('continue-btn').addEventListener('click', () => {
+      stopPolling();
+      stepWait.classList.add('hidden');
       stepAction.classList.remove('hidden');
       status.textContent = 'Listo';
     });

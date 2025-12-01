@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kafka Web Producer (Remote)</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 2rem; background: #f4f6f8; }
-    button { padding: 0.8rem 1.4rem; font-size: 1.1rem; cursor: pointer; }
-    #status { margin-top: 1rem; font-family: monospace; }
+    body { font-family: Arial, sans-serif; padding: 2rem; background: #f4f6f8; margin:0; }
+    button { padding: 1rem 2rem; font-size: 1.2rem; cursor: pointer; border: none; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+    #status { margin-top: 1rem; font-family: monospace; text-align:center; color:#333; }
     input { padding: 0.5rem; width: 100%; margin: 0.5rem 0; }
-    .card { background: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .card { background: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); max-width: 420px; margin: 2rem auto; }
     .hidden { display: none; }
+    #step-action { background: transparent; box-shadow: none; padding: 0; max-width: none; margin: 0; display: flex; justify-content: center; align-items: center; height: calc(100vh - 40px); flex-direction: column; }
   </style>
 </head>
 <body>
@@ -23,11 +24,8 @@
   </div>
 
   <div class="card hidden" id="step-action">
-    <h2 id="team-info"></h2>
     <input id="endpoint" type="hidden" value="https://a03651b9babe.ngrok-free.app/send" />
-    <div style="display:flex; justify-content:center; margin-top:1rem;">
-      <button id="send">Enviar</button>
-    </div>
+    <button id="send">Enviar</button>
     <div id="status" style="text-align:center; margin-top:1rem;">Listo</div>
   </div>
 
@@ -39,20 +37,18 @@
     const joinBtn = document.getElementById('join');
     const stepName = document.getElementById('step-name');
     const stepAction = document.getElementById('step-action');
-    const teamInfo = document.getElementById('team-info');
     let user = { name: "", team: "" };
 
     const teams = [
-      { name: "azul", color: "#e1f0ff" },
-      { name: "verde", color: "#e5ffea" },
-      { name: "rojo", color: "#ffe6e6" },
+      { name: "azul", color: "#0d47a1" },
+      { name: "verde", color: "#1b5e20" },
+      { name: "rojo", color: "#b71c1c" },
     ];
 
     function pickTeam() {
       const t = teams[Math.floor(Math.random() * teams.length)];
       user.team = t.name;
       document.body.style.background = t.color;
-      teamInfo.textContent = `Estás en el equipo ${t.name.toUpperCase()}`;
     }
 
     joinBtn.addEventListener('click', () => {

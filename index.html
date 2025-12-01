@@ -46,7 +46,10 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error(HTTP );
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(HTTP  .trim());
+        }
         const data = await res.json();
         setStatus(OK\n);
       } catch (err) {

@@ -1,54 +1,220 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kafka Web Producer (Remote)</title>
+  <title>Participa</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 2rem; background: #f4f6f8; }
-    button { padding: 0.8rem 1.4rem; font-size: 1.1rem; cursor: pointer; }
-    #status { margin-top: 1rem; font-family: monospace; }
-    input { padding: 0.5rem; width: 100%; margin: 0.5rem 0; }
-    .card { background: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --shadow: 0 12px 28px rgba(0,0,0,0.12);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: var(--card);
+      padding: 24px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      width: min(420px, 90vw);
+    }
+    h1 { margin: 0 0 12px; font-size: 22px; }
+    p  { margin: 0 0 18px; color: var(--muted); }
+    label { display: block; margin-bottom: 8px; font-weight: 600; }
+    input, button {
+      width: 100%;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid #d0d5dd;
+      padding: 12px 14px;
+    }
+    input { margin-bottom: 12px; }
+    button {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      transition: transform 120ms ease, box-shadow 120ms ease;
+      box-shadow: 0 10px 22px rgba(37, 99, 235, 0.25);
+    }
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    #status { margin-top: 10px; font-family: monospace; white-space: pre-wrap; }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .team-screen {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      color: #0b1120;
+    }
+    .team-button {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.85);
+      background: rgba(255,255,255,0.92);
+      color: #0f172a;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      box-shadow: 0 18px 38px rgba(0,0,0,0.18);
+      backdrop-filter: blur(6px);
+    }
+    #clickStatus { font-family: monospace; color: #0f172a; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Enviar a Kafka (topic: test)</h1>
-    <p>Cada clic envía un mensaje incrementando: click-1, click-2, ...</p>
-    <label for="username">Tu nombre:</label>
-    <input id="username" type="text" placeholder="Escribe tu nombre" />
-    <label for="endpoint">Endpoint público (ngrok/tu API):</label>
-    <input id="endpoint" type="text" value="https://e36f08b1f35a.ngrok-free.app/send" />
-    <button id="send">Enviar</button>
-    <div id="status">Listo</div>
+  <div id="screen-start" class="screen active">
+    <div class="card">
+      <h1>Participa</h1>
+      <p>Introduce tu nombre y te asignaremos un equipo al azar.</p>
+      <label for="name">Tu nombre</label>
+      <input id="name" type="text" placeholder="Escribe tu nombre" autocomplete="name" />
+      <label for="endpoint">Endpoint (ngrok)</label>
+      <input id="endpoint" type="text" value="https://75c745dc71c2.ngrok-free.app/send" />
+      <button id="joinBtn">Participar</button>
+      <div id="status"></div>
+    </div>
+  </div>
+
+  <div id="screen-team" class="screen">
+    <div class="team-screen" id="teamScreen">
+      <div id="teamLabel">Equipo</div>
+      <button id="clickBtn" class="team-button" aria-label="Botón decorativo">¡Pulsa!</button>
+      <div id="clickStatus"></div>
+      <div id="userLabel"></div>
+    </div>
   </div>
 
   <script>
-    const btn = document.getElementById('send');
-    const status = document.getElementById('status');
-    const endpointInput = document.getElementById('endpoint');
-    const usernameInput = document.getElementById('username');
+    const TEAMS = [
+      { id: "Azul", name: "Equipo Azul", color: "#2563eb" },
+      { id: "Verde", name: "Equipo Verde", color: "#22c55e" },
+      { id: "Rojo", name: "Equipo Rojo", color: "#ef4444" },
+    ];
 
-    btn.addEventListener('click', async () => {
-      status.textContent = 'Enviando...';
-      const url = endpointInput.value.trim();
-      const name = usernameInput.value.trim();
-      if (!url) { status.textContent = 'Error: endpoint vacío'; return; }
-      if (!name) { status.textContent = 'Error: introduce tu nombre'; return; }
-      try {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name })
-        });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const data = await res.json();
-        status.textContent = 'Enviado: ' + (data.sent || JSON.stringify(data)) + ' (usuario: ' + name + ')';
-      } catch (err) {
-        status.textContent = 'Error: ' + err;
+    const startScreen = document.getElementById("screen-start");
+    const teamScreen = document.getElementById("screen-team");
+    const statusEl = document.getElementById("status");
+    const joinBtn = document.getElementById("joinBtn");
+    const nameInput = document.getElementById("name");
+    const endpointInput = document.getElementById("endpoint");
+    const teamLabel = document.getElementById("teamLabel");
+    const userLabel = document.getElementById("userLabel");
+    const teamScreenContainer = document.getElementById("teamScreen");
+    const clickBtn = document.getElementById("clickBtn");
+    const clickStatus = document.getElementById("clickStatus");
+
+    const session = { name: null, team: null, endpoint: null };
+
+    function setStatus(message, isError = false) {
+      statusEl.textContent = message;
+      statusEl.style.color = isError ? "#b00020" : "#0f172a";
+    }
+
+    function setClickStatus(message, isError = false) {
+      clickStatus.textContent = message;
+      clickStatus.style.color = isError ? "#b00020" : "#0f172a";
+    }
+
+    function pickRandomTeam() {
+      return TEAMS[Math.floor(Math.random() * TEAMS.length)];
+    }
+
+    function showScreen(screen) {
+      startScreen.classList.remove("active");
+      teamScreen.classList.remove("active");
+      screen.classList.add("active");
+    }
+
+    async function handleJoin() {
+      const name = (nameInput.value || "").trim();
+      const endpoint = (endpointInput.value || "").trim();
+      if (!name) {
+        setStatus("Error: introduce tu nombre", true);
+        return;
       }
-    });
+      if (!endpoint) {
+        setStatus("Error: endpoint vacío", true);
+        return;
+      }
+      const team = pickRandomTeam();
+      joinBtn.disabled = true;
+      setStatus("Enviando...");
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, team: team.id, event: "join" }),
+        });
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(`HTTP ${res.status} ${text}`.trim());
+        }
+        await res.json().catch(() => ({}));
+        session.name = name;
+        session.team = team.id;
+        session.endpoint = endpoint;
+        teamLabel.textContent = team.name;
+        userLabel.textContent = `Jugador: ${name}`;
+        teamScreenContainer.style.background = team.color;
+        setClickStatus("Listo para enviar");
+        showScreen(teamScreen);
+      } catch (err) {
+        setStatus(`Error: ${err.message}`, true);
+      } finally {
+        joinBtn.disabled = false;
+      }
+    }
+
+    async function handleClick() {
+      if (!session.name || !session.team || !session.endpoint) return;
+      clickBtn.disabled = true;
+      setClickStatus("Enviando...");
+      try {
+        const res = await fetch(session.endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: session.name, team: session.team, event: "click" }),
+        });
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(`HTTP ${res.status} ${text}`.trim());
+        }
+        await res.json().catch(() => ({}));
+        setClickStatus("Enviado");
+      } catch (err) {
+        setClickStatus(`Error: ${err.message}`, true);
+      } finally {
+        clickBtn.disabled = false;
+      }
+    }
+
+    joinBtn.addEventListener("click", handleJoin);
+    clickBtn.addEventListener("click", handleClick);
   </script>
 </body>
 </html>
